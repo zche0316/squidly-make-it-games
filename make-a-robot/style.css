@@ -1,0 +1,104 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background: #ececec;
+  overflow: hidden;
+}
+
+.game {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.scene {
+  width: min(100vw - 16px, calc((100vh - 16px) * 4 / 3));
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.reset-btn {
+  position: absolute;
+  top: 1.6%;
+  left: 1.6%;
+  z-index: 40;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #0d4267;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+.reset-btn:hover {
+  background: #0a334f;
+}
+
+.status {
+  position: absolute;
+  top: 1.6%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+.hotspot {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.hotspot:focus-visible {
+  outline: 2px solid rgba(13, 66, 103, 0.8);
+  outline-offset: 1px;
+}
+
+.robot-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.robot-part {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  object-fit: contain;
+}

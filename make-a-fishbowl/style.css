@@ -1,0 +1,119 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background: #e9e9e9;
+  overflow: hidden;
+}
+
+.game {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.reset-btn {
+  position: absolute;
+  top: 1.6%;
+  left: 1.6%;
+  z-index: 30;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #0a7ab5;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+.reset-btn:hover {
+  background: #09699b;
+}
+
+.scene {
+  width: min(100vw - 16px, calc((100vh - 16px) * 4 / 3));
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+  background-image: url("./resources/background/幻灯片1.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.placed-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.placed-item {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--item-scale, 1));
+  transform-origin: center center;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+}
+
+.placed-layer-bottom .placed-item {
+  z-index: 2;
+}
+
+.placed-layer-center .placed-item {
+  z-index: 5;
+}
+
+.placed-item--draggable {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.placed-item--draggable:active {
+  cursor: grabbing;
+}
+
+.hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+
+.hotspot {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.hotspot:focus-visible {
+  outline: 2px solid rgba(18, 113, 160, 0.8);
+  outline-offset: 1px;
+}
+
+.drag-preview {
+  position: fixed;
+  width: min(18vmin, 150px);
+  height: auto;
+  pointer-events: none;
+  z-index: 2000;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  opacity: 0.94;
+}
