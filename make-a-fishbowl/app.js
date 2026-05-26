@@ -1,489 +1,623 @@
-const CENTER_TYPES = new Set(["fish", "star", "bubble"]);
-const FIXED_BOTTOM_ITEM_SLOT = {
-  sand: 0,
-  pebble: 0,
-};
-const DESIGN_WIDTH = 1920;
-const BASE_ITEM_SCALE = 0.55;
-const MAX_PER_ITEM = 4;
-const MASK_SRC = "./resources/mask.png";
+import { initBackToHub } from "../shared/back-nav.js";
+import { createSessionSync } from "../shared/session-sync.js";
+import {
+  ART_VIEW_BOX,
+  BOWL,
+  BOWL_PALETTE_GAP,
+  CENTER_TYPES,
+  COLOR_COUNT,
+  ITEM_BY_ID,
+  MAX_PER_ITEM,
+  PALETTE_ACCESS_GROUP,
+  PALETTE_BOTTOM_HIT_WIDTH_FRAC,
+  PALETTE_CENTER_BY_ID,
+  PALETTE_CENTERS,
+  RESOURCE_ITEMS,
+  SLOT_ACCESS_GROUP,
+  FISH_SLOT_FLIPPED,
+  PALETTE_FISH_FLIPPED,
+  SLOT_BY_ID,
+  SLOT_ITEM_FILL,
+  SLOT_LAYOUT,
+} from "./fishbowl-layout.js";
 
-// Fishbowl area constraint in scene percentage space.
-const BOWL = {
-  cx: 37,
-  cy: 60,
-  rx: 33,
-  ry: 37,
-};
-
-const RESOURCE_ITEMS = [
-  { id: "sand", label: "sand", src: "./resources/sand.svg", type: "bottom" },
-  { id: "pebble", label: "pebble", src: "./resources/pebble.svg", type: "bottom" },
-  { id: "stones", label: "stones", src: "./resources/stones.svg", type: "bottom" },
-  { id: "shell1", label: "shell1", src: "./resources/shell1.svg", type: "bottom" },
-  { id: "shell2", label: "shell2", src: "./resources/shell2.svg", type: "bottom" },
-  { id: "shell3", label: "shell3", src: "./resources/shell3.svg", type: "bottom" },
-  { id: "seaweed1", label: "seaweed1", src: "./resources/seaweed1.svg", type: "bottom" },
-  { id: "seaweed2", label: "seaweed2", src: "./resources/seaweed2.svg", type: "bottom" },
-  { id: "seaweed3", label: "seaweed3", src: "./resources/seaweed3.svg", type: "bottom" },
-  { id: "seaweed4", label: "seaweed4", src: "./resources/seaweed4.svg", type: "bottom" },
-  { id: "fish1", label: "fish1", src: "./resources/fish1.svg", type: "fish" },
-  { id: "fish2", label: "fish2", src: "./resources/fish2.svg", type: "fish" },
-  { id: "fish3", label: "fish3", src: "./resources/fish3.svg", type: "fish" },
-  { id: "fish4", label: "fish4", src: "./resources/fish4.svg", type: "fish" },
-  { id: "fish5", label: "fish5", src: "./resources/fish5.svg", type: "fish" },
-  { id: "fish6", label: "fish6", src: "./resources/fish6.svg", type: "fish" },
-  { id: "starBlue", label: "star-blue", src: "./resources/star-blue.svg", type: "star" },
-  { id: "starRed", label: "star-red", src: "./resources/star-red.svg", type: "star" },
-  { id: "starYellow", label: "star-yellow", src: "./resources/star-yellow.svg", type: "star" },
-  { id: "bubble", label: "bubble", src: "./resources/bubble.svg", type: "bubble" },
-];
-
-const BOTTOM_SLOTS = [
-  { x: 35, y: 90 },
-  { x: 35, y: 90 },
-];
-
-// Click hotspots aligned to the printed background asset.
-const HOTSPOTS = [
-  { id: "sand", x: 6, y: 0.5, w: 45, h: 12.5 },
-  { id: "stones", x: 77, y: 31, w: 17, h: 8.5 },
-  { id: "pebble", x: 80, y: 8, w: 15, h: 10 },
-  { id: "bubble", x: 66, y: 27, w: 9, h: 9 },
-  { id: "starBlue", x: 64, y: 37.5, w: 9, h: 9.5 },
-  { id: "starYellow", x: 71, y: 33, w: 8.5, h: 8.5 },
-  { id: "starRed", x: 78, y: 33.5, w: 8.5, h: 8.5 },
-  { id: "fish1", x: 66.5, y: 43.3, w: 12, h: 11.2 },
-  { id: "fish2", x: 78.7, y: 43.2, w: 12, h: 11.2 },
-  { id: "fish3", x: 66.5, y: 54.2, w: 12, h: 11.2 },
-  { id: "fish4", x: 78.7, y: 54.2, w: 12, h: 11.2 },
-  { id: "fish5", x: 72.6, y: 64.6, w: 12, h: 11.2 },
-  { id: "fish6", x: 84.6, y: 64.6, w: 12, h: 11.2 },
-  { id: "seaweed1", x: 66.2, y: 81.8, w: 5.6, h: 11 },
-  { id: "seaweed2", x: 73, y: 80.6, w: 6.2, h: 12.2 },
-  { id: "seaweed3", x: 70, y: 90, w: 5.8, h: 8.2 },
-  { id: "seaweed4", x: 77.4, y: 90.4, w: 6.6, h: 8.2 },
-  { id: "shell1", x: 82.8, y: 88.8, w: 6.7, h: 8.5 },
-  { id: "shell2", x: 88.8, y: 89.4, w: 6.7, h: 8.5 },
-  { id: "shell3", x: 91.8, y: 80.6, w: 6.7, h: 8.5 },
-];
-
-const hotspotsEl = document.getElementById("hotspots");
 const sceneEl = document.getElementById("scene");
+const hotspotsEl = document.getElementById("hotspots");
 const placedBottomEl = document.getElementById("placed-bottom");
 const placedCenterEl = document.getElementById("placed-center");
+const slotsAccessEl = document.getElementById("fishbowl-slots-access");
 const resetBtn = document.getElementById("reset-btn");
+const resetAccessBtn = document.getElementById("reset-access-btn");
+const squidlyAPI = window.SquidlyAPI;
 
-const bottomPlacedBySlot = new Map();
-let drag = null;
 let zStack = 1;
+let selectedItemId = null;
+const paletteColorByItemId = new Map();
+const slotPlacements = new Map();
 const sourceImageCache = new Map();
-const maskImage = new Image();
-let maskReady = false;
-const candidateCanvas = document.createElement("canvas");
-const candidateCtx = candidateCanvas.getContext("2d", { willReadFrequently: true });
-const maskSampleCanvas = document.createElement("canvas");
-maskSampleCanvas.width = 1;
-maskSampleCanvas.height = 1;
-const maskSampleCtx = maskSampleCanvas.getContext("2d", { willReadFrequently: true });
 
-function getItemById(id) {
-  return RESOURCE_ITEMS.find((x) => x.id === id) || null;
+const sessionSync = createSessionSync({
+  gameSlug: "make-a-fishbowl",
+  serialize: serializeFishbowlState,
+  apply: applyFishbowlState,
+});
+
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const getItemById = (id) => ITEM_BY_ID.get(id) ?? null;
+const hasArtFamily = (item) => Boolean(item?.artFamily);
+const isCenterLayer = (type) => CENTER_TYPES.has(type);
+
+function resolveLegacyPlacement(itemId, colorIndex) {
+  const hasColor = Number.isFinite(colorIndex);
+  const fish = /^fish(\d)$/.exec(itemId);
+  if (fish) {
+    return { itemId: "fish", colorIndex: hasColor ? colorIndex : (Number(fish[1]) - 1) % COLOR_COUNT };
+  }
+  const seaweed = /^seaweed(\d)$/.exec(itemId);
+  if (seaweed) {
+    return {
+      itemId: "seaweed",
+      colorIndex: hasColor ? colorIndex : (Number(seaweed[1]) - 1) % COLOR_COUNT,
+    };
+  }
+  const shell = /^shell(\d)$/.exec(itemId);
+  if (shell) {
+    return {
+      itemId: "shell",
+      colorIndex: hasColor ? colorIndex : (Number(shell[1]) - 1) % COLOR_COUNT,
+    };
+  }
+  if (itemId === "starBlue") return { itemId: "star", colorIndex: hasColor ? colorIndex : 1 };
+  if (itemId === "starYellow") return { itemId: "star", colorIndex: hasColor ? colorIndex : 2 };
+  if (itemId === "starRed") return { itemId: "star", colorIndex: hasColor ? colorIndex : 3 };
+  return { itemId, colorIndex: hasColor ? colorIndex : 0 };
+}
+
+function serializeFishbowlState() {
+  const slots = [];
+  for (const { id: slotId } of SLOT_LAYOUT) {
+    const node = slotPlacements.get(slotId);
+    if (!node?.isConnected) continue;
+    const item = getItemById(node.dataset.itemId);
+    if (!item) continue;
+    const left = Number.parseFloat(node.style.left);
+    const top = Number.parseFloat(node.style.top);
+    if (!Number.isFinite(left) || !Number.isFinite(top)) continue;
+    const entry = {
+      slotId,
+      itemId: item.id,
+      xPct: Number(left.toFixed(3)),
+      yPct: Number(top.toFixed(3)),
+      z: Number.parseInt(node.style.zIndex || "1", 10) || 1,
+    };
+    if (hasArtFamily(item)) {
+      const c = Number.parseInt(node.dataset.colorIndex ?? "", 10);
+      entry.colorIndex = Number.isFinite(c) ? c : 0;
+    }
+    slots.push(entry);
+  }
+  slots.sort((a, b) => a.z - b.z);
+  return JSON.stringify({ v: 2, slots });
+}
+
+function applyFishbowlState(statePayload) {
+  if (typeof statePayload !== "string" || !statePayload.trim()) return;
+  let parsed;
+  try {
+    parsed = JSON.parse(statePayload);
+  } catch {
+    return;
+  }
+  const version = parsed?.v;
+  if ((version !== 1 && version !== 2) || !Array.isArray(parsed.slots)) return;
+
+  placedBottomEl.innerHTML = "";
+  placedCenterEl.innerHTML = "";
+  slotPlacements.clear();
+  zStack = 1;
+  selectedItemId = null;
+  paletteColorByItemId.clear();
+
+  const bySlot = new Map();
+  for (const s of parsed.slots) {
+    if (!s?.slotId) continue;
+    const rawColor = version === 2 && Number.isFinite(s.colorIndex) ? s.colorIndex : null;
+    const { itemId, colorIndex } = resolveLegacyPlacement(s.itemId, rawColor);
+    const item = getItemById(itemId);
+    if (!item || !slotAccepts(s.slotId, item)) continue;
+    const z = Number.isFinite(s.z) ? s.z : 1;
+    const prev = bySlot.get(s.slotId);
+    if (!prev || z >= (prev.z || 1)) {
+      bySlot.set(s.slotId, { slotId: s.slotId, xPct: s.xPct, yPct: s.yPct, z, item, colorIndex });
+    }
+  }
+
+  for (const entry of [...bySlot.values()].sort((a, b) => (a.z || 1) - (b.z || 1))) {
+    const xPct = Number(entry.xPct);
+    const yPct = Number(entry.yPct);
+    if (!Number.isFinite(xPct) || !Number.isFinite(yPct)) continue;
+    const node = createPlacedItem(entry.item, xPct, yPct, entry.colorIndex);
+    const itemZ = entry.z || zStack + 1;
+    node.style.zIndex = String(itemZ);
+    zStack = Math.max(zStack, itemZ);
+    node.dataset.fishbowlSlot = entry.slotId;
+    if (entry.item.type === "fish") applyFishArtFlip(node, fishFlipForSlot(entry.slotId));
+    (isCenterLayer(entry.item.type) ? placedCenterEl : placedBottomEl).appendChild(node);
+    slotPlacements.set(entry.slotId, node);
+  }
+
+  syncSlotFilledClasses();
+  syncPaletteSelectionStyles();
+  syncSlotTargetStyles();
+}
+
+function getPaletteColorIndex(item) {
+  if (!item) return 0;
+  const stored = paletteColorByItemId.get(item.id);
+  return stored !== undefined ? stored : 0;
+}
+
+function paletteAriaLabel(item, colorIndex) {
+  if (!item) return "Select item";
+  return hasArtFamily(item)
+    ? `Select ${item.label}, color ${(colorIndex % COLOR_COUNT) + 1} of ${COLOR_COUNT}`
+    : `Select ${item.label}`;
+}
+
+function isFishArtEl(el) {
+  return el?.classList?.contains("item-art--fish");
+}
+
+function applyFishArtFlip(el, flipped) {
+  if (!isFishArtEl(el)) return;
+  el.classList.toggle("is-flipped", Boolean(flipped));
+}
+
+function fishFlipForSlot(slotId) {
+  return Boolean(FISH_SLOT_FLIPPED[slotId]);
+}
+
+function createItemArtElement(item, colorIndex, extraClass = "") {
+  const n = colorIndex % COLOR_COUNT;
+  const span = document.createElement("span");
+  span.className = `item-art item-art--${item.artFamily} color-${n} ${extraClass}`.trim();
+  span.setAttribute("role", "img");
+  span.setAttribute("aria-hidden", "true");
+  span.dataset.colorIndex = String(n);
+  return span;
 }
 
 function getSourceImage(item) {
-  let img = sourceImageCache.get(item.id);
-  if (!img) {
-    img = new Image();
+  if (!item?.src) return null;
+  if (!sourceImageCache.has(item.id)) {
+    const img = new Image();
     img.src = item.src;
     sourceImageCache.set(item.id, img);
   }
+  return sourceImageCache.get(item.id);
+}
+
+function getPrimarySlotRectForItem(item) {
+  if (!item) return null;
+  if (item.id === "stones") return SLOT_BY_ID.get("stone-slot");
+  if (item.id === "shell") return SLOT_BY_ID.get("shell-slot");
+  if (item.id === "seaweed") return SLOT_BY_ID.get("seaweed-slot");
+  if (item.type === "fish") {
+    const a = SLOT_BY_ID.get("fish-slot-1");
+    const b = SLOT_BY_ID.get("fish-slot-2");
+    return { w: Math.max(a.w, b.w), h: Math.max(a.h, b.h) };
+  }
+  if (item.type === "star") return SLOT_BY_ID.get("seastar-slot");
+  if (item.type === "bubble") return SLOT_BY_ID.get("bubble-slot");
+  if (item.id === "sand" || item.id === "pebble") return SLOT_BY_ID.get("bottom-slot");
+  return null;
+}
+
+function computeItemDisplayMetrics(item) {
+  const slot = getPrimarySlotRectForItem(item);
+  if (!slot || !sceneEl) return null;
+  let nw;
+  let nh;
+  if (hasArtFamily(item)) {
+    const box = ART_VIEW_BOX[item.artFamily];
+    if (!box) return null;
+    nw = box.w;
+    nh = box.h;
+  } else {
+    const img = getSourceImage(item);
+    if (!img?.naturalWidth) return null;
+    nw = img.naturalWidth;
+    nh = img.naturalHeight;
+  }
+  const r = sceneEl.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  const scale = Math.min(
+    ((slot.w / 100) * r.width * SLOT_ITEM_FILL) / nw,
+    ((slot.h / 100) * r.height * SLOT_ITEM_FILL) / nh,
+  );
+  const widthPx = nw * scale;
+  const heightPx = nh * scale;
+  return {
+    widthPct: (widthPx / r.width) * 100,
+    heightPct: (heightPx / r.height) * 100,
+    widthPx,
+    heightPx,
+  };
+}
+
+function applyItemMetrics(node, item, palette = false) {
+  const m = computeItemDisplayMetrics(item);
+  if (!m) return;
+  if (palette) {
+    node.style.width = `${m.widthPx}px`;
+    node.style.height = `${m.heightPx}px`;
+  } else {
+    node.style.width = `${m.widthPct}%`;
+    node.style.height = `${m.heightPct}%`;
+  }
+}
+
+function bindItemLayout(node, item, palette = false) {
+  if (hasArtFamily(item)) {
+    applyItemMetrics(node, item, palette);
+    return;
+  }
+  const img = getSourceImage(item);
+  if (!img) return;
+  const apply = () => applyItemMetrics(node, item, palette);
+  if (img.complete && img.naturalWidth) apply();
+  else img.addEventListener("load", apply, { once: true });
+}
+
+function createPlacedItem(item, xPct, yPct, colorIndex = null) {
+  const color =
+    colorIndex !== null && colorIndex !== undefined
+      ? colorIndex % COLOR_COUNT
+      : getPaletteColorIndex(item);
+  let node;
+  if (hasArtFamily(item)) {
+    node = createItemArtElement(item, color, "placed-item");
+  } else {
+    node = document.createElement("img");
+    node.src = item.src;
+    node.alt = "";
+    node.className = "placed-item";
+  }
+  node.dataset.itemId = item.id;
+  if (hasArtFamily(item)) node.dataset.colorIndex = String(color);
+  node.style.left = `${xPct}%`;
+  node.style.top = `${yPct}%`;
+  node.style.zIndex = String(++zStack);
+  bindItemLayout(node, item);
+  return node;
+}
+
+function createPaletteVisual(item) {
+  if (hasArtFamily(item)) {
+    const node = createItemArtElement(item, getPaletteColorIndex(item), "palette-item-visual");
+    if (item.id === "fish") applyFishArtFlip(node, PALETTE_FISH_FLIPPED);
+    return node;
+  }
+  const img = document.createElement("img");
+  img.className = "palette-item-visual";
+  img.src = item.src;
+  img.alt = "";
+  img.draggable = false;
   return img;
 }
 
-function getSceneScale() {
-  const sceneRect = sceneEl?.getBoundingClientRect();
-  const sceneWidth = sceneRect?.width || DESIGN_WIDTH;
-  return sceneWidth / DESIGN_WIDTH;
+function bowlRightEdgePctAtY(yPct) {
+  const dy = (yPct - BOWL.cy) / BOWL.ry;
+  if (dy <= -1) return BOWL.cx;
+  if (dy >= 1) return BOWL.cx + BOWL.rx;
+  return BOWL.cx + BOWL.rx * Math.sqrt(1 - dy * dy);
 }
 
-function getItemScale() {
-  return BASE_ITEM_SCALE * getSceneScale();
+function keepPaletteRectOutsideBowl(rect) {
+  let minLeft = 0;
+  for (let i = 0; i < 5; i += 1) {
+    const y = rect.y + (rect.h * i) / 4;
+    minLeft = Math.max(minLeft, bowlRightEdgePctAtY(y) + BOWL_PALETTE_GAP);
+  }
+  return rect.x >= minLeft ? rect : { ...rect, x: clamp(minLeft, 0, 100 - rect.w) };
 }
 
-function isCenterItemType(type) {
-  return CENTER_TYPES.has(type);
+function getPaletteAccessRect(item) {
+  const anchor = PALETTE_CENTER_BY_ID.get(item.id);
+  if (!anchor) return null;
+  if (item.id === "sand" || item.id === "pebble") {
+    const bottom = SLOT_BY_ID.get("bottom-slot");
+    const w = bottom.w * PALETTE_BOTTOM_HIT_WIDTH_FRAC;
+    const h = bottom.h;
+    return {
+      x: clamp(anchor.cx - w / 2, 0, 100 - w),
+      y: clamp(anchor.cy - h / 2, 0.15, 100 - h - 0.15),
+      w,
+      h,
+    };
+  }
+  const slot = getPrimarySlotRectForItem(item);
+  if (!slot?.w) return null;
+  return keepPaletteRectOutsideBowl({
+    x: clamp(anchor.cx - slot.w / 2, 0, 100 - slot.w),
+    y: clamp(anchor.cy - slot.h / 2, 0.15, 100 - slot.h - 0.15),
+    w: slot.w,
+    h: slot.h,
+  });
+}
+
+function slotAccepts(slotId, item) {
+  if (!item) return false;
+  switch (slotId) {
+    case "fish-slot-1":
+    case "fish-slot-2":
+      return item.type === "fish";
+    case "seastar-slot":
+      return item.type === "star";
+    case "bubble-slot":
+      return item.type === "bubble";
+    case "seaweed-slot":
+      return item.id === "seaweed";
+    case "stone-slot":
+      return item.id === "stones";
+    case "shell-slot":
+      return item.id === "shell";
+    case "bottom-slot":
+      return item.id === "sand" || item.id === "pebble";
+    default:
+      return false;
+  }
 }
 
 function getPlacedCount(itemId) {
-  const bottomCount = placedBottomEl.querySelectorAll(`[data-item-id="${itemId}"]`).length;
-  const centerCount = placedCenterEl.querySelectorAll(`[data-item-id="${itemId}"]`).length;
-  return bottomCount + centerCount;
+  return (
+    placedBottomEl.querySelectorAll(`[data-item-id="${itemId}"]`).length +
+    placedCenterEl.querySelectorAll(`[data-item-id="${itemId}"]`).length
+  );
 }
 
-function createPlacedItem(item, xPct, yPct, draggable = true) {
-  const img = document.createElement("img");
-  img.src = item.src;
-  img.alt = "";
-  img.className = "placed-item";
-  img.dataset.itemId = item.id;
-  img.dataset.itemType = item.type;
-  img.style.left = `${xPct}%`;
-  img.style.top = `${yPct}%`;
-  img.style.setProperty("--item-scale", String(getItemScale()));
-  img.style.zIndex = String(++zStack);
-
-  const applyNaturalWidth = () => {
-    if (!img.naturalWidth) return;
-    img.style.width = `${img.naturalWidth}px`;
-    img.style.height = "auto";
-  };
-  if (img.complete) {
-    applyNaturalWidth();
-  } else {
-    img.addEventListener("load", applyNaturalWidth, { once: true });
-  }
-
-  if (draggable) {
-    img.classList.add("placed-item--draggable");
-    img.addEventListener("pointerdown", onPlacedPointerDown);
-  }
-  return img;
-}
-
-function placeFixedBottom(item) {
-  const slotIndex = FIXED_BOTTOM_ITEM_SLOT[item.id] ?? 0;
-  const slot = BOTTOM_SLOTS[slotIndex];
-  const existing = bottomPlacedBySlot.get(slotIndex);
-  if (existing) {
-    existing.remove();
-  }
-  const node = createPlacedItem(item, slot.x, slot.y, false);
-  placedBottomEl.appendChild(node);
-  bottomPlacedBySlot.set(slotIndex, node);
-}
-
-function getBowlClientParams() {
-  const r = sceneEl.getBoundingClientRect();
-  return {
-    cx: r.left + (BOWL.cx / 100) * r.width,
-    cy: r.top + (BOWL.cy / 100) * r.height,
-    rx: (BOWL.rx / 100) * r.width,
-    ry: (BOWL.ry / 100) * r.height,
-  };
+function sceneRect() {
+  return sceneEl.getBoundingClientRect();
 }
 
 function clientToScenePercent(clientX, clientY) {
-  const r = sceneEl.getBoundingClientRect();
-  return {
-    xPct: ((clientX - r.left) / r.width) * 100,
-    yPct: ((clientY - r.top) / r.height) * 100,
-  };
+  const r = sceneRect();
+  return { xPct: ((clientX - r.left) / r.width) * 100, yPct: ((clientY - r.top) / r.height) * 100 };
+}
+
+function scenePercentToClient(xPct, yPct) {
+  const r = sceneRect();
+  return { x: r.left + (xPct / 100) * r.width, y: r.top + (yPct / 100) * r.height };
 }
 
 function projectIntoBowl(clientX, clientY) {
-  const { cx, cy, rx, ry } = getBowlClientParams();
+  const r = sceneRect();
+  const cx = r.left + (BOWL.cx / 100) * r.width;
+  const cy = r.top + (BOWL.cy / 100) * r.height;
+  const rx = (BOWL.rx / 100) * r.width;
+  const ry = (BOWL.ry / 100) * r.height;
   const dx = clientX - cx;
   const dy = clientY - cy;
   const metric = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
-  if (metric <= 1) {
-    return { x: clientX, y: clientY };
-  }
+  if (metric <= 1) return { x: clientX, y: clientY };
   const s = 1 / Math.sqrt(metric);
   return { x: cx + dx * s, y: cy + dy * s };
 }
 
-function isMaskAllowedForItemAtClient(item, clientX, clientY) {
-  if (!maskReady || !candidateCtx || !sceneEl) return true;
-
-  const source = getSourceImage(item);
-  if (!source || !source.naturalWidth || !source.naturalHeight) return true;
-
-  const itemScale = getItemScale();
-  const drawW = Math.max(1, Math.round(source.naturalWidth * itemScale));
-  const drawH = Math.max(1, Math.round(source.naturalHeight * itemScale));
-  candidateCanvas.width = drawW;
-  candidateCanvas.height = drawH;
-  candidateCtx.clearRect(0, 0, drawW, drawH);
-  candidateCtx.drawImage(source, 0, 0, drawW, drawH);
-
-  const px = candidateCtx.getImageData(0, 0, drawW, drawH).data;
-  const sceneRect = sceneEl.getBoundingClientRect();
-  const left = clientX - drawW / 2;
-  const top = clientY - drawH / 2;
-  const step = Math.max(1, Math.floor(Math.min(drawW, drawH) / 80));
-
-  for (let y = 0; y < drawH; y += step) {
-    for (let x = 0; x < drawW; x += step) {
-      const idx = (y * drawW + x) * 4;
-      const alpha = px[idx + 3];
-      if (alpha < 24) continue;
-
-      const sceneX = left + x;
-      const sceneY = top + y;
-      const nx = (sceneX - sceneRect.left) / sceneRect.width;
-      const ny = (sceneY - sceneRect.top) / sceneRect.height;
-      if (nx < 0 || nx > 1 || ny < 0 || ny > 1) {
-        return false;
-      }
-
-      const mx = Math.max(0, Math.min(maskImage.naturalWidth - 1, Math.round(nx * (maskImage.naturalWidth - 1))));
-      const my = Math.max(0, Math.min(maskImage.naturalHeight - 1, Math.round(ny * (maskImage.naturalHeight - 1))));
-      if (!maskSampleCtx) return false;
-      maskSampleCtx.clearRect(0, 0, 1, 1);
-      maskSampleCtx.drawImage(maskImage, mx, my, 1, 1, 0, 0, 1, 1);
-      const m = maskSampleCtx.getImageData(0, 0, 1, 1).data;
-      const isBlack = m[0] <= 20 && m[1] <= 20 && m[2] <= 20;
-      if (isBlack) {
-        return false;
-      }
-    }
+function overlapsAnyPlaced(clientX, clientY, excludeElement, itemToPlace = null) {
+  let newRadius = null;
+  if (itemToPlace) {
+    const m = computeItemDisplayMetrics(itemToPlace);
+    if (m) newRadius = Math.max(m.widthPx, m.heightPx) * 0.46;
   }
-  return true;
-}
-
-function overlapsAnyPlaced(clientX, clientY, excludeElement, dragItem = null) {
-  const dragRadius = dragItem ? getItemScale() * 30 : 0;
-  
-  for (const img of sceneEl.querySelectorAll(".placed-item")) {
-    if (img === excludeElement) continue;
-    if (img.style.visibility === "hidden") continue;
-    if (img.dataset.itemId === "sand" || img.dataset.itemId === "pebble") continue;
-
-    const br = img.getBoundingClientRect();
+  for (const el of sceneEl.querySelectorAll(".placed-item")) {
+    if (el === excludeElement || el.style.visibility === "hidden") continue;
+    if (el.dataset.itemId === "sand" || el.dataset.itemId === "pebble") continue;
+    const br = el.getBoundingClientRect();
     if (br.width < 2 || br.height < 2) continue;
-
+    const ro = Math.max(br.width, br.height) * 0.46;
     const ox = br.left + br.width / 2;
     const oy = br.top + br.height / 2;
-    const ro = Math.max(br.width, br.height) * 0.46;
-    const rNew = dragRadius || (ro * 0.95);
-
-    if (Math.hypot(clientX - ox, clientY - oy) < ro + rNew) {
-      return true;
-    }
+    if (Math.hypot(clientX - ox, clientY - oy) < ro + (newRadius ?? ro) * 0.95) return true;
   }
   return false;
 }
 
-function tryPlacementClientPosition(item, clientX, clientY, excludeElement) {
+function placeItemInSlot(slotId, item) {
+  if (!item || !slotAccepts(slotId, item)) return false;
+  const slot = SLOT_BY_ID.get(slotId);
+  if (!slot) return false;
+  const prevEl = slotPlacements.get(slotId);
+  if (getPlacedCount(item.id) >= MAX_PER_ITEM && (!prevEl || prevEl.dataset.itemId !== item.id)) {
+    return false;
+  }
+  const { x: clientX, y: clientY } = scenePercentToClient(slot.x + slot.w / 2, slot.y + slot.h / 2);
   const p = projectIntoBowl(clientX, clientY);
-  if (overlapsAnyPlaced(p.x, p.y, excludeElement, item)) {
-    return null;
-  }
-  if (!isMaskAllowedForItemAtClient(item, p.x, p.y)) {
-    return null;
-  }
-  return p;
+  if (!p || overlapsAnyPlaced(p.x, p.y, prevEl || null, item)) return false;
+  prevEl?.remove();
+  slotPlacements.delete(slotId);
+  const { xPct, yPct } = clientToScenePercent(p.x, p.y);
+  const node = createPlacedItem(item, xPct, yPct);
+  node.dataset.fishbowlSlot = slotId;
+  if (item.type === "fish") applyFishArtFlip(node, fishFlipForSlot(slotId));
+  (isCenterLayer(item.type) ? placedCenterEl : placedBottomEl).appendChild(node);
+  slotPlacements.set(slotId, node);
+  syncSlotFilledClasses();
+  syncSlotTargetStyles();
+  sessionSync.publish(squidlyAPI);
+  return true;
 }
 
-function attachGlobalPointerListeners() {
-  document.addEventListener("pointermove", onPointerMove, true);
-  document.addEventListener("pointerup", onPointerUp, true);
-  document.addEventListener("pointercancel", onPointerUp, true);
+function selectItem(itemId) {
+  selectedItemId = itemId;
+  syncPaletteSelectionStyles();
+  syncSlotTargetStyles();
 }
 
-function detachGlobalPointerListeners() {
-  document.removeEventListener("pointermove", onPointerMove, true);
-  document.removeEventListener("pointerup", onPointerUp, true);
-  document.removeEventListener("pointercancel", onPointerUp, true);
+function updatePaletteArt(wrap) {
+  const item = getItemById(wrap?.dataset?.itemId);
+  const visual = wrap?.querySelector(".palette-item-visual");
+  if (!item || !visual || !hasArtFamily(item)) return;
+  const n = getPaletteColorIndex(item) % COLOR_COUNT;
+  visual.className = `item-art item-art--${item.artFamily} color-${n} palette-item-visual`;
+  if (item.id === "fish") applyFishArtFlip(visual, PALETTE_FISH_FLIPPED);
+  visual.dataset.colorIndex = String(n);
+  wrap.dataset.colorIndex = String(n);
+  wrap.querySelector(".hotspot")?.setAttribute("aria-label", paletteAriaLabel(item, n));
 }
 
-function cleanupDragPreview() {
-  if (!drag) return;
-  if (drag.mode === "placed" && drag.element && drag.element.isConnected) {
-    drag.element.style.visibility = drag.prevVisibility || "visible";
-  }
-  drag.preview.remove();
-  drag = null;
-  detachGlobalPointerListeners();
+function syncPaletteSelectionStyles() {
+  hotspotsEl.querySelectorAll(".access-wrap--palette").forEach((wrap) => {
+    const item = getItemById(wrap.dataset.itemId);
+    const selected = wrap.dataset.itemId === selectedItemId;
+    wrap.classList.toggle("palette-ingredient-selected", selected);
+    if (selected && item?.artFamily) wrap.dataset.colorIndex = String(getPaletteColorIndex(item));
+    else delete wrap.dataset.colorIndex;
+    wrap.querySelector(".hotspot")?.setAttribute(
+      "aria-label",
+      paletteAriaLabel(item, getPaletteColorIndex(item)),
+    );
+  });
 }
 
-function beginPaletteDrag(e, item) {
-  e.preventDefault();
-
-  const preview = document.createElement("img");
-  preview.src = item.src;
-  preview.className = "drag-preview";
-  preview.alt = "";
-  document.body.appendChild(preview);
-
-  drag = {
-    mode: "palette",
-    item,
-    preview,
-    pointerId: e.pointerId,
-    captureTarget: e.currentTarget,
-  };
-
-  preview.style.left = `${e.clientX}px`;
-  preview.style.top = `${e.clientY}px`;
-
-  if (e.currentTarget && typeof e.currentTarget.setPointerCapture === "function") {
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-
-  attachGlobalPointerListeners();
+function syncSlotFilledClasses() {
+  slotsAccessEl?.querySelectorAll(".access-wrap--fishbowl-slot").forEach((wrap) => {
+    wrap.classList.toggle("fishbowl-slot--filled", slotPlacements.has(wrap.dataset.slotId));
+  });
 }
 
-function onHotspotPointerDown(e) {
-  if (e.button !== 0) return;
-  const target = e.currentTarget;
-  const item = getItemById(target.dataset.itemId);
+function syncSlotTargetStyles() {
+  const item = getItemById(selectedItemId);
+  slotsAccessEl?.classList.toggle("fishbowl-slots-access--ready", Boolean(item));
+  document.querySelectorAll(".access-wrap--fishbowl-slot").forEach((wrap) => {
+    wrap.classList.toggle("slot-drop-ready", Boolean(item && slotAccepts(wrap.dataset.slotId, item)));
+  });
+  sceneEl.querySelectorAll(".placed-item--slot-drop-ready").forEach((el) => {
+    el.classList.remove("placed-item--slot-drop-ready");
+  });
   if (!item) return;
+  for (const [slotId, el] of slotPlacements) {
+    if (el.isConnected && slotAccepts(slotId, item)) el.classList.add("placed-item--slot-drop-ready");
+  }
+}
 
+function activatePaletteWrap(wrap) {
+  const item = getItemById(wrap?.dataset?.itemId);
+  if (!item) return;
   if (item.id === "sand" || item.id === "pebble") {
-    placeFixedBottom(item);
+    placeItemInSlot("bottom-slot", item);
     return;
   }
-
-  if (getPlacedCount(item.id) >= MAX_PER_ITEM) {
+  if (selectedItemId === item.id && hasArtFamily(item)) {
+    paletteColorByItemId.set(item.id, (getPaletteColorIndex(item) + 1) % COLOR_COUNT);
+    updatePaletteArt(wrap);
+    syncPaletteSelectionStyles();
     return;
   }
-
-  beginPaletteDrag(e, item);
+  selectItem(item.id);
 }
 
-function onPlacedPointerDown(e) {
-  if (e.button !== 0) return;
-  const element = e.currentTarget;
-  const item = getItemById(element.dataset.itemId);
-  if (!item || item.id === "sand" || item.id === "pebble") {
-    return;
-  }
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const preview = document.createElement("img");
-  preview.src = item.src;
-  preview.className = "drag-preview";
-  preview.alt = "";
-  document.body.appendChild(preview);
-
-  const prevLeft = element.style.left || "";
-  const prevTop = element.style.top || "";
-  const prevVisibility = element.style.visibility || "";
-
-  element.style.visibility = "hidden";
-
-  drag = {
-    mode: "placed",
-    item,
-    element,
-    preview,
-    pointerId: e.pointerId,
-    prevLeft,
-    prevTop,
-    prevVisibility,
-    captureTarget: element,
-  };
-
-  preview.style.left = `${e.clientX}px`;
-  preview.style.top = `${e.clientY}px`;
-
-  if (typeof element.setPointerCapture === "function") {
-    element.setPointerCapture(e.pointerId);
-  }
-
-  attachGlobalPointerListeners();
-}
-
-function onPointerMove(e) {
-  if (!drag || e.pointerId !== drag.pointerId) return;
-  drag.preview.style.left = `${e.clientX}px`;
-  drag.preview.style.top = `${e.clientY}px`;
-}
-
-function onPointerUp(e) {
-  if (!drag || e.pointerId !== drag.pointerId) return;
-
-  detachGlobalPointerListeners();
-  if (drag.captureTarget && typeof drag.captureTarget.releasePointerCapture === "function") {
-    drag.captureTarget.releasePointerCapture(e.pointerId);
-  }
-
-  if (drag.mode === "palette") {
-    const placement = tryPlacementClientPosition(drag.item, e.clientX, e.clientY, null);
-    if (placement) {
-      const { xPct, yPct } = clientToScenePercent(placement.x, placement.y);
-      const node = createPlacedItem(drag.item, xPct, yPct, true);
-      const targetLayer = isCenterItemType(drag.item.type) ? placedCenterEl : placedBottomEl;
-      targetLayer.appendChild(node);
-    }
-  } else if (drag.mode === "placed") {
-    const { element, prevLeft, prevTop, prevVisibility } = drag;
-    const placement = tryPlacementClientPosition(drag.item, e.clientX, e.clientY, element);
-    if (placement) {
-      const { xPct, yPct } = clientToScenePercent(placement.x, placement.y);
-      element.style.left = `${xPct}%`;
-      element.style.top = `${yPct}%`;
-      element.style.zIndex = String(++zStack);
-    } else {
-      element.style.left = prevLeft;
-      element.style.top = prevTop;
-    }
-    if (element.isConnected) {
-      element.style.visibility = prevVisibility || "visible";
-    }
-  }
-
-  drag.preview.remove();
-  drag = null;
+function activateSlotWrap(wrap) {
+  const item = getItemById(selectedItemId);
+  if (item && wrap?.dataset?.slotId) placeItemInSlot(wrap.dataset.slotId, item);
 }
 
 function resetBowl() {
-  cleanupDragPreview();
   placedBottomEl.innerHTML = "";
   placedCenterEl.innerHTML = "";
-  bottomPlacedBySlot.clear();
+  slotPlacements.clear();
   zStack = 1;
+  selectedItemId = null;
+  paletteColorByItemId.clear();
+  syncPaletteSelectionStyles();
+  syncSlotTargetStyles();
+  syncSlotFilledClasses();
+  sessionSync.publish(squidlyAPI);
 }
 
-function refreshPlacedItemScale() {
-  const scale = String(getItemScale());
-  document.querySelectorAll(".placed-item").forEach((node) => {
-    node.style.setProperty("--item-scale", scale);
+function refreshAllItemVisualSizes() {
+  sceneEl.querySelectorAll(".placed-item").forEach((node) => {
+    const item = getItemById(node.dataset.itemId);
+    if (item) applyItemMetrics(node, item);
+  });
+  hotspotsEl.querySelectorAll(".palette-item-visual").forEach((node) => {
+    const item = getItemById(node.closest(".access-wrap--palette")?.dataset?.itemId);
+    if (item) applyItemMetrics(node, item, true);
   });
 }
 
-function renderHotspots() {
+function renderFishbowlSlotsAccess() {
+  if (!slotsAccessEl) return;
+  slotsAccessEl.innerHTML = "";
+  SLOT_LAYOUT.forEach((slot, i) => {
+    const art = document.createElement("img");
+    art.className = "fishbowl-slot-art";
+    art.src = slot.art;
+    art.alt = "";
+    art.draggable = false;
+    const dropBtn = document.createElement("button");
+    dropBtn.type = "button";
+    dropBtn.className = "fishbowl-slot-drop";
+    dropBtn.setAttribute("aria-label", `Place item in ${slot.id}`);
+    dropBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      activateSlotWrap(dropBtn.closest(".access-wrap--fishbowl-slot"));
+    });
+    const wrap = document.createElement("access-button");
+    wrap.className = "access-wrap access-wrap--fishbowl-slot";
+    wrap.dataset.slotId = slot.id;
+    wrap.setAttribute("access-group", SLOT_ACCESS_GROUP);
+    wrap.setAttribute("access-order", String(i + 1));
+    wrap.style.cssText = `left:${slot.x}%;top:${slot.y}%;width:${slot.w}%;height:${slot.h}%`;
+    wrap.addEventListener("access-click", (e) => activateSlotWrap(e.currentTarget));
+    wrap.append(art, dropBtn);
+    slotsAccessEl.appendChild(wrap);
+  });
+}
+
+function renderPaletteHotspots() {
   hotspotsEl.innerHTML = "";
-  HOTSPOTS.forEach((hs) => {
-    const item = getItemById(hs.id);
-    if (!item) return;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "hotspot";
-    button.dataset.itemId = item.id;
-    button.setAttribute("aria-label", `place ${item.label}`);
-    button.style.left = `${hs.x}%`;
-    button.style.top = `${hs.y}%`;
-    button.style.width = `${hs.w}%`;
-    button.style.height = `${hs.h}%`;
-    button.addEventListener("pointerdown", onHotspotPointerDown);
-    hotspotsEl.appendChild(button);
+  PALETTE_CENTERS.forEach((anchor, idx) => {
+    const item = getItemById(anchor.id);
+    const rect = item && getPaletteAccessRect(item);
+    if (!item || !rect) return;
+    const art = createPaletteVisual(item);
+    const hotspotButton = document.createElement("button");
+    hotspotButton.type = "button";
+    hotspotButton.className = "hotspot";
+    hotspotButton.dataset.itemId = item.id;
+    hotspotButton.setAttribute("aria-label", paletteAriaLabel(item, getPaletteColorIndex(item)));
+    hotspotButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      activatePaletteWrap(hotspotButton.closest(".access-wrap--palette"));
+    });
+    const wrap = document.createElement("access-button");
+    wrap.className = "access-wrap access-wrap--palette";
+    wrap.dataset.itemId = item.id;
+    wrap.setAttribute("access-group", PALETTE_ACCESS_GROUP);
+    wrap.setAttribute("access-order", String(idx + 1));
+    wrap.style.cssText = `left:${rect.x}%;top:${rect.y}%;width:${rect.w}%;height:${rect.h}%`;
+    wrap.addEventListener("access-click", (e) => activatePaletteWrap(e.currentTarget));
+    wrap.append(art, hotspotButton);
+    hotspotsEl.appendChild(wrap);
+    bindItemLayout(art, item, true);
   });
+  syncPaletteSelectionStyles();
 }
 
-function initMask() {
-  maskImage.addEventListener("load", () => {
-    maskReady = true;
-  });
-  maskImage.addEventListener("error", () => {
-    maskReady = false;
-    console.warn("[fishbowl] mask.png failed to load, fallback to geometric checks.");
-  });
-  maskImage.src = MASK_SRC;
-}
-
-function preloadSourceImages() {
-  RESOURCE_ITEMS.forEach((item) => {
-    getSourceImage(item);
-  });
-}
-
-initMask();
-preloadSourceImages();
-renderHotspots();
+RESOURCE_ITEMS.forEach((item) => {
+  if (item.src) getSourceImage(item);
+});
+renderFishbowlSlotsAccess();
+renderPaletteHotspots();
+refreshAllItemVisualSizes();
+syncSlotTargetStyles();
 resetBtn?.addEventListener("click", resetBowl);
-window.addEventListener("resize", refreshPlacedItemScale);
+resetAccessBtn?.addEventListener("access-click", resetBowl);
+window.addEventListener("resize", refreshAllItemVisualSizes);
+initBackToHub();
+if (squidlyAPI?.addSessionInfoListener) {
+  squidlyAPI.addSessionInfoListener((info) => sessionSync.init(info, squidlyAPI));
+} else {
+  sessionSync.init(null, squidlyAPI);
+}

@@ -4,13 +4,86 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
+    <link rel="stylesheet" href="../shared/squidly-buttons.css" />
+    <link rel="stylesheet" href="../shared/miniapp-layout.css" />
+    <link rel="stylesheet" href="../shared/scene-controls.css" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body shadow>
     <main class="game">
       <div class="scene" id="scene">
-        <button id="reset-btn" class="reset-btn" type="button" aria-label=""></button>
+        <access-button
+          id="back-access-btn"
+          class="back-access-wrap"
+          access-group="scene-controls"
+          access-order="0"
+        >
+          <a
+            id="back-btn"
+            class="scene-control-btn squidly-btn squidly-btn--normal"
+            href="../index.html"
+            aria-label="Back to games"
+          >Back</a>
+        </access-button>
+        <access-button
+          id="reset-access-btn"
+          class="reset-access-wrap"
+          access-group="scene-controls"
+          access-order="1"
+        >
+          <button
+            id="reset-btn"
+            class="scene-control-btn squidly-btn squidly-btn--action"
+            type="button"
+            aria-label="Reset pizza"
+          >
+            Reset
+          </button>
+        </access-button>
         <div class="placed-layer" id="placed-layer"></div>
+        <div class="pizza-access-layer" id="pizza-access-layer">
+          <!-- Four drop slots: evenly on pizza ellipse (top / right / bottom / left). Placement uses currently selected ingredient. -->
+          <access-button
+            class="access-wrap access-wrap--pizza-slot pizza-drop-slot"
+            access-group="pizza-drop"
+            access-order="1"
+            data-slot-x-pct="40"
+            data-slot-y-pct="25"
+            style="left: 40%; top: 25%"
+          >
+            <button type="button" class="pizza-slot" aria-label="Place selected ingredient here"></button>
+          </access-button>
+          <access-button
+            class="access-wrap access-wrap--pizza-slot pizza-drop-slot"
+            access-group="pizza-drop"
+            access-order="2"
+            data-slot-x-pct="59.5"
+            data-slot-y-pct="50"
+            style="left: 59.5%; top: 50%"
+          >
+            <button type="button" class="pizza-slot" aria-label="Place selected ingredient here"></button>
+          </access-button>
+          <access-button
+            class="access-wrap access-wrap--pizza-slot pizza-drop-slot"
+            access-group="pizza-drop"
+            access-order="3"
+            data-slot-x-pct="40"
+            data-slot-y-pct="75"
+            style="left: 40%; top: 75%"
+          >
+            <button type="button" class="pizza-slot" aria-label="Place selected ingredient here"></button>
+          </access-button>
+          <access-button
+            class="access-wrap access-wrap--pizza-slot pizza-drop-slot"
+            access-group="pizza-drop"
+            access-order="4"
+            data-slot-x-pct="20.5"
+            data-slot-y-pct="50"
+            style="left: 20.5%; top: 50%"
+          >
+            <button type="button" class="pizza-slot" aria-label="Place selected ingredient here"></button>
+          </access-button>
+        </div>
         <div class="hotspots" id="hotspots"></div>
       </div>
     </main>

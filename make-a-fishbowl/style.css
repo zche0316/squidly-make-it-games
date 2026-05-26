@@ -9,50 +9,22 @@ body {
   margin: 0;
   height: 100%;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #fff;
+  overflow: hidden;
 }
 
 body {
-  background: #e9e9e9;
-  overflow: hidden;
-}
-
-.game {
-  width: 100%;
-  height: 100%;
   display: grid;
   place-items: center;
-  padding: 8px;
-}
-
-.reset-btn {
-  position: absolute;
-  top: 1.6%;
-  left: 1.6%;
-  z-index: 30;
-  border: 0;
-  border-radius: 999px;
-  padding: 8px 14px;
-  background: #0a7ab5;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
-  opacity: 0.95;
-}
-
-.reset-btn:hover {
-  background: #09699b;
 }
 
 .scene {
-  width: min(100vw - 16px, calc((100vh - 16px) * 4 / 3));
+  width: min(100vw, 100vh * 4 / 3);
+  height: min(100vh, 100vw * 3 / 4);
   aspect-ratio: 4 / 3;
   position: relative;
   overflow: hidden;
-  background-image: url("./resources/background/幻灯片1.png");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
+  background: #fff url("./resources/background/fishbowl.png") center / 100% 100% no-repeat;
 }
 
 .placed-layer {
@@ -61,59 +33,168 @@ body {
   pointer-events: none;
 }
 
+.placed-layer-bottom {
+  z-index: 10100;
+}
+
+.placed-layer-center {
+  z-index: 10150;
+}
+
 .placed-item {
   position: absolute;
-  transform: translate(-50%, -50%) scale(var(--item-scale, 1));
+  max-width: none;
+  transform: translate(-50%, -50%);
   transform-origin: center center;
   object-fit: contain;
   pointer-events: none;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+  filter:
+    drop-shadow(0 1px 2px rgba(143, 83, 201, 0.15))
+    drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18));
+  z-index: 1;
 }
 
-.placed-layer-bottom .placed-item {
-  z-index: 2;
+.placed-item.placed-item--slot-drop-ready {
+  filter:
+    drop-shadow(0 1px 2px rgba(143, 83, 201, 0.15))
+    drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18))
+    drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 0 4px rgba(143, 83, 201, 0.95))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.58))
+    drop-shadow(0 0 16px rgba(143, 83, 201, 0.35));
 }
 
-.placed-layer-center .placed-item {
-  z-index: 5;
+.fishbowl-slots-access {
+  position: absolute;
+  inset: 0;
+  z-index: 10080;
+  pointer-events: none;
 }
 
-.placed-item--draggable {
+.access-wrap--fishbowl-slot {
+  border-radius: 12px;
   pointer-events: auto;
-  cursor: grab;
-  touch-action: none;
 }
 
-.placed-item--draggable:active {
-  cursor: grabbing;
+.fishbowl-slot-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  opacity: 0.92;
+  transition:
+    filter 0.18s ease-out,
+    opacity 0.18s ease-out,
+    visibility 0.18s ease-out;
+}
+
+.access-wrap--fishbowl-slot.fishbowl-slot--filled .fishbowl-slot-art {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.fishbowl-slot-drop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.fishbowl-slot-drop:focus-visible {
+  outline: 2px solid #ff61a6;
+  outline-offset: 2px;
+}
+
+.fishbowl-slots-access--ready {
+  --fishbowl-slot-glow-violet: rgba(143, 83, 201, 0.95);
+  --fishbowl-slot-glow-magenta: rgba(255, 97, 166, 0.62);
+}
+
+.access-wrap--fishbowl-slot.slot-drop-ready:not(.fishbowl-slot--filled) .fishbowl-slot-art {
+  filter:
+    drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 0 4px var(--fishbowl-slot-glow-violet))
+    drop-shadow(0 0 10px var(--fishbowl-slot-glow-magenta))
+    drop-shadow(0 0 16px rgba(143, 83, 201, 0.38));
+}
+
+.access-wrap--fishbowl-slot[hover]:not(.fishbowl-slot--filled) .fishbowl-slot-art {
+  filter:
+    drop-shadow(0 0 1px rgba(143, 83, 201, 0.95))
+    drop-shadow(0 0 5px rgba(255, 97, 166, 0.68))
+    drop-shadow(0 0 12px rgba(143, 83, 201, 0.48));
 }
 
 .hotspots {
   position: absolute;
   inset: 0;
-  z-index: 20;
-}
-
-.hotspot {
-  position: absolute;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 12px;
-}
-
-.hotspot:focus-visible {
-  outline: 2px solid rgba(18, 113, 160, 0.8);
-  outline-offset: 1px;
-}
-
-.drag-preview {
-  position: fixed;
-  width: min(18vmin, 150px);
-  height: auto;
+  z-index: 11000;
   pointer-events: none;
-  z-index: 2000;
+}
+
+.access-wrap--palette {
+  border-radius: 12px;
+  pointer-events: auto;
+  overflow: visible;
+}
+
+.access-wrap--palette.palette-ingredient-selected {
+  z-index: 2;
+}
+
+.palette-item-visual {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
-  opacity: 0.94;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: filter 0.15s ease-out;
+}
+
+.item-art {
+  display: block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.palette-item-visual.item-art.is-flipped,
+.placed-item.item-art.is-flipped {
+  transform: translate(-50%, -50%) scaleX(-1);
+}
+
+.access-wrap--palette.palette-ingredient-selected .palette-item-visual {
+  filter:
+    drop-shadow(0 0 0.75px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.55))
+    drop-shadow(0 0 4px rgba(143, 83, 201, 1))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.82))
+    drop-shadow(0 0 16px rgba(143, 83, 201, 0.52))
+    drop-shadow(0 0 22px rgba(255, 97, 166, 0.38));
+}
+
+.access-wrap--palette:focus-visible:not(.palette-ingredient-selected) .palette-item-visual,
+.access-wrap--palette[hover]:not(.palette-ingredient-selected) .palette-item-visual {
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 5px rgba(143, 83, 201, 0.85))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.45));
 }

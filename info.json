@@ -1,0 +1,9 @@
+{
+  "name": "make-it-games",
+  "title": "make it games",
+  "subtitle": "Fishbowl, pizza & robot",
+  "version": "1.0.0",
+  "description": "Pick a mini-app: decorate a fishbowl, make a pizza, or build a robot.",
+  "author": "SquidlyDev",
+  "icon": "./make-a-pizza/resources/pepperoni.svg"
+}

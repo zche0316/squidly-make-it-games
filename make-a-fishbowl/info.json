@@ -1,0 +1,9 @@
+{
+  "name": "make-a-fishbowl",
+  "title": "Make a Fishbowl",
+  "subtitle": "Decorate your fishbowl",
+  "version": "1.0.0",
+  "description": "Select palette items and place them into slots (Squidly access-button + mouse). Shared bowl state syncs via SquidlyAPI Firebase when a session is active.",
+  "author": "SquidlyDev",
+  "icon": "./resources/bubble.svg"
+}

@@ -1,20 +1,73 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title></title>
+    <title>Make a Robot</title>
+    <link rel="stylesheet" href="../shared/squidly-buttons.css" />
+    <link rel="stylesheet" href="../shared/miniapp-layout.css" />
+    <link rel="stylesheet" href="../shared/scene-controls.css" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body shadow>
-    <main class="game">
-      <div class="scene" id="scene">
-        <button id="reset-btn" class="reset-btn" type="button" aria-label=""></button>
-        <div id="status" class="status" aria-live="polite"></div>
-        <div id="robot-layer" class="robot-layer" aria-hidden="true"></div>
-        <div id="hotspots" class="hotspots"></div>
-      </div>
-    </main>
+    <motion class="scene scene--robot" id="scene">
+      <img id="scene-bg" class="scene-bg" alt="" />
+      <motion id="robot-layer" class="robot-layer" aria-hidden="true"></motion>
+
+      <access-button
+        id="back-access-btn"
+        class="back-access-wrap"
+        access-group="scene-controls"
+        access-order="0"
+      >
+        <a
+          id="back-btn"
+          class="scene-control-btn squidly-btn squidly-btn--normal"
+          href="../index.html"
+          aria-label="Back to games"
+        >Back</a>
+      </access-button>
+      <access-button
+        id="reset-access-btn"
+        class="reset-access-wrap"
+        access-group="scene-controls"
+        access-order="6"
+      >
+        <button
+          id="reset-btn"
+          class="scene-control-btn squidly-btn squidly-btn--action"
+          type="button"
+          aria-label="Reset robot"
+        >
+          Reset
+        </button>
+      </access-button>
+
+      <motion id="category-access" class="category-access"></motion>
+
+      <motion id="picker-layer" class="picker-layer" hidden>
+        <header class="picker-header">
+          <h2 id="picker-title" class="picker-layer__title"></h2>
+          <access-button
+            id="picker-back-wrap"
+            class="picker-back-wrap"
+            access-group="robot-picker"
+            access-order="0"
+            hidden
+          >
+            <button
+              id="picker-back"
+              type="button"
+              class="picker-back squidly-btn squidly-btn--normal"
+              aria-label="Back to shapes"
+            >
+              Back
+            </button>
+          </access-button>
+        </header>
+        <div id="picker-grid" class="picker-grid"></div>
+      </motion>
+    </motion>
 
     <script type="module" src="app.js"></script>
   </body>

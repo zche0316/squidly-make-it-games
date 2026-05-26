@@ -1,9 +1,9 @@
 {
   "name": "make-a-pizza",
-  "title": "",
-  "subtitle": "",
+  "title": "Make a Pizza",
+  "subtitle": "Build your perfect pizza",
   "version": "1.0.0",
-  "description": "",
-  "author": "",
-  "icon": ""
+  "description": "Drag and place ingredients to make a pizza with Squidly mini app accessibility support.",
+  "author": "SquidlyDev",
+  "icon": "./resources/pizza-plate.svg"
 }

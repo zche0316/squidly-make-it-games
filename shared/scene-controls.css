@@ -1,0 +1,57 @@
+/* Top-corner scene controls (Back / Reset) — shared by all make-a-* games. */
+
+.back-access-wrap,
+.reset-access-wrap {
+  position: absolute;
+  z-index: 12000;
+  display: block;
+  overflow: hidden;
+  border-radius: 0.55em;
+  width: min(18vw, 200px);
+  height: min(10vh, 52px);
+  max-width: 210px;
+  max-height: 66px;
+  pointer-events: auto;
+}
+
+.back-access-wrap {
+  top: 1.6%;
+  left: 1.6%;
+  right: auto;
+}
+
+.reset-access-wrap {
+  top: 1.6%;
+  right: 1.6%;
+  left: auto;
+}
+
+.scene-control-btn {
+  font-size: clamp(14px, 1.35vw, 18px);
+}
+
+a.scene-control-btn.squidly-btn {
+  text-decoration: none;
+  color: var(--squidly-btn-text, white);
+}
+
+/* Robot: categories + reset on the left dock; back stays top-right. */
+.scene--robot .reset-access-wrap {
+  top: 68%;
+  left: 2%;
+  right: auto;
+  width: 15%;
+  min-width: 128px;
+  max-width: 240px;
+  max-height: 72px;
+}
+
+.scene--robot .back-access-wrap {
+  top: 1.6%;
+  left: auto;
+  right: 1.6%;
+}
+
+.scene--robot .scene-control-btn {
+  font-size: clamp(16px, 2.1cqh, 22px);
+}

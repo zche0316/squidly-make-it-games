@@ -1,22 +1,53 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
+    <link rel="stylesheet" href="../shared/squidly-buttons.css" />
+    <link rel="stylesheet" href="../shared/miniapp-layout.css" />
+    <link rel="stylesheet" href="../shared/scene-controls.css" />
+    <link rel="stylesheet" href="./item-art.css" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body shadow>
-    <main class="game">
-      <div class="scene" id="scene">
-        <button id="reset-btn" class="reset-btn" type="button" aria-label="">
-        </button>
+    <div class="scene" id="scene">
+        <access-button
+          id="back-access-btn"
+          class="back-access-wrap"
+          access-group="scene-controls"
+          access-order="0"
+        >
+          <a
+            id="back-btn"
+            class="scene-control-btn squidly-btn squidly-btn--normal"
+            href="../index.html"
+            aria-label="Back to games"
+          >Back</a>
+        </access-button>
+        <access-button
+          id="reset-access-btn"
+          class="reset-access-wrap"
+          access-group="scene-controls"
+          access-order="1"
+        >
+          <button
+            id="reset-btn"
+            class="scene-control-btn squidly-btn squidly-btn--action"
+            type="button"
+            aria-label="Reset fishbowl"
+          >
+            Reset
+          </button>
+        </access-button>
 
         <div class="placed-layer placed-layer-bottom" id="placed-bottom"></div>
         <div class="placed-layer placed-layer-center" id="placed-center"></div>
+
+        <div class="fishbowl-slots-access" id="fishbowl-slots-access"></div>
+
         <div class="hotspots" id="hotspots"></div>
-      </div>
-    </main>
+    </div>
 
     <script type="module" src="app.js"></script>
   </body>

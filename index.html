@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>make it games</title>
+    <link rel="stylesheet" href="./shared/squidly-buttons.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+
+      body {
+        font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+        background-color: #ececec;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 184.252 171.091'%3E%3Crect width='184.252' height='42.773' fill='%23f497a2'/%3E%3Crect y='42.773' width='184.252' height='42.773' fill='%23f3f7f6'/%3E%3Crect y='85.546' width='184.252' height='42.773' fill='%23d3eada'/%3E%3Crect y='128.318' width='184.252' height='42.773' fill='%23f3f7f6'/%3E%3C/svg%3E");
+        background-size: 100px 100px;
+        background-repeat: repeat;
+        display: flex;
+        flex-direction: column;
+        padding: clamp(16px, 4vw, 36px);
+        overflow: hidden;
+      }
+
+      .page {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: min(680px, 100%);
+        margin: 0 auto;
+        min-height: 0;
+      }
+
+      h1 {
+        margin: 0 0 clamp(16px, 3vh, 28px);
+        font-size: clamp(2rem, 6vw, 3rem);
+        font-weight: 700;
+        text-transform: lowercase;
+        text-align: center;
+        color: var(--squidly-violet-deep, #6b3ea0);
+        flex-shrink: 0;
+      }
+
+      .games {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: clamp(14px, 3vh, 24px);
+        min-height: 0;
+      }
+
+      .games > li {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+      }
+
+      .hub-game {
+        flex: 1;
+        position: relative;
+        display: block;
+        min-height: clamp(76px, 17vh, 132px);
+        border-radius: 0.55em;
+        text-decoration: none;
+        filter: drop-shadow(0 4px 10px rgba(107, 62, 160, 0.18));
+        transition: filter 0.12s ease, transform 0.12s ease;
+      }
+
+      .hub-game:hover {
+        filter: drop-shadow(0 6px 14px rgba(143, 83, 201, 0.35));
+        transform: translateY(-2px);
+      }
+
+      .hub-game:active {
+        transform: translateY(1px);
+      }
+
+      .hub-game:focus-visible {
+        outline: 3px solid var(--squidly-violet-deep, #6b3ea0);
+        outline-offset: 4px;
+      }
+
+      .hub-game .squidly-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2em;
+        padding: 0.4em 0.6em 0.5em;
+        border-radius: 0.55em;
+      }
+
+      .hub-game__logo {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: min(88%, 280px);
+        max-height: min(58%, 96px);
+        min-height: 0;
+        object-fit: contain;
+        pointer-events: none;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+      }
+
+      .hub-game__label {
+        flex: 0 0 auto;
+        width: 100%;
+        text-align: center;
+        font-size: clamp(1rem, 2.8vw, 1.35rem);
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body shadow>
+    <div class="page">
+      <h1>make it games</h1>
+      <ul class="games">
+        <li>
+          <a class="hub-game" href="./make-a-fishbowl/index.html">
+            <span class="squidly-btn squidly-btn--normal">
+              <img
+                class="hub-game__logo"
+                src="./make-a-fishbowl/resources/background/fishbowl.png"
+                alt=""
+              />
+              <span class="hub-game__label">Make a Fishbowl</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="hub-game" href="./make-a-pizza/index.html">
+            <span class="squidly-btn squidly-btn--emphasis">
+              <img
+                class="hub-game__logo"
+                src="./make-a-pizza/resources/pepperoni.svg"
+                alt=""
+              />
+              <span class="hub-game__label">Make a Pizza</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="hub-game" href="./make-a-robot/index.html">
+            <span class="squidly-btn squidly-btn--normal">
+              <img
+                class="hub-game__logo"
+                src="./make-a-robot/resources/head/head-round-1.svg"
+                alt=""
+              />
+              <span class="hub-game__label">Make a Robot</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </body>
+</html>

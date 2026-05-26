@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../SquidlySessionV3"
+		},
+		{
+			"path": "../../resources"
+		}
+	],
+	"settings": {
+		"liveServer.settings.port": 5501,
+		"liveServer.settings.root": "/",
+		"liveServer.settings.cors": true,
+		"liveServer.settings.multiRootWorkspaceName": "Games"
+	}
+}

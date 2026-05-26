@@ -1,0 +1,90 @@
+/* Squidly Session grid-icon button look for mini-apps (action / normal / emphasis). */
+/* Linked from each game as ../shared/squidly-buttons.css — serve the Games repo root. */
+
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
+.squidly-btn--action {
+  --squidly-btn-main: hsl(11, 100%, 33%);
+  --squidly-btn-tab: hsl(11, 100%, 25%);
+  --squidly-btn-main-hover: hsl(11, 100%, 23%);
+  --squidly-btn-tab-hover: hsl(11, 100%, 15%);
+  --squidly-btn-main-active: hsl(11, 96%, 18%);
+  --squidly-btn-tab-active: hsl(11, 92%, 9%);
+  --squidly-btn-text: white;
+  --squidly-btn-outline: hsl(11, 100%, 15%);
+}
+
+.squidly-btn--normal {
+  --squidly-btn-main: hsl(211, 100%, 83%);
+  --squidly-btn-tab: hsl(211, 70%, 62%);
+  --squidly-btn-main-hover: hsl(211, 95%, 66.4%);
+  --squidly-btn-tab-hover: hsl(211, 66.5%, 49.6%);
+  --squidly-btn-main-active: hsl(211, 100%, 53.95%);
+  --squidly-btn-tab-active: hsl(211, 73.5%, 40.3%);
+  --squidly-btn-text: black;
+  --squidly-btn-outline: hsl(211, 84%, 37.2%);
+}
+
+.squidly-btn--emphasis {
+  --squidly-btn-main: hsl(18, 77%, 50%);
+  --squidly-btn-tab: hsl(18, 86%, 41%);
+  --squidly-btn-main-hover: hsl(18, 73%, 40%);
+  --squidly-btn-tab-hover: hsl(18, 82%, 33%);
+  --squidly-btn-main-active: hsl(18, 80%, 32%);
+  --squidly-btn-tab-active: hsl(18, 88%, 26%);
+  --squidly-btn-text: white;
+  --squidly-btn-outline: hsl(18, 86%, 28%);
+}
+
+.squidly-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0.2em 0.35em 0.42em;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0.55em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(11px, 1.2vw, 16px);
+  line-height: 1;
+  text-align: center;
+  color: var(--squidly-btn-text, white);
+  background-color: var(--squidly-btn-main);
+  box-shadow:
+    inset 0 -0.35em 0 var(--squidly-btn-tab),
+    0 2px 4px rgba(0, 0, 0, 0.22);
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
+}
+
+.squidly-btn:hover,
+access-button[hover] .squidly-btn {
+  background-color: var(--squidly-btn-main-hover);
+  box-shadow:
+    inset 0 -0.35em 0 var(--squidly-btn-tab-hover),
+    0 2px 4px rgba(0, 0, 0, 0.28),
+    0 0 0 2px var(--squidly-btn-outline);
+}
+
+.squidly-btn:active {
+  background-color: var(--squidly-btn-main-active);
+  box-shadow:
+    inset 0 -0.28em 0 var(--squidly-btn-tab-active),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+  transform: scale(0.98);
+}
+
+.squidly-btn:focus-visible,
+access-button:focus-visible .squidly-btn {
+  outline: 3px solid var(--squidly-btn-outline);
+  outline-offset: 2px;
+}

@@ -12,10 +12,12 @@ body {
 }
 
 body {
-  background: #ececec;
+  background-color: #ececec;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 184.252 171.091'%3E%3Crect width='184.252' height='42.773' fill='%23f497a2'/%3E%3Crect y='42.773' width='184.252' height='42.773' fill='%23f3f7f6'/%3E%3Crect y='85.546' width='184.252' height='42.773' fill='%23d3eada'/%3E%3Crect y='128.318' width='184.252' height='42.773' fill='%23f3f7f6'/%3E%3C/svg%3E");
+  background-size: 100px 100px;
+  background-repeat: repeat;
   overflow: hidden;
   touch-action: none;
-  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -32,30 +34,7 @@ body {
   aspect-ratio: 4 / 3;
   position: relative;
   overflow: hidden;
-  background-image: url("./resources/background.png");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.reset-btn {
-  position: absolute;
-  top: 1.6%;
-  left: 1.6%;
-  z-index: 30;
-  border: 0;
-  border-radius: 999px;
-  padding: 8px 14px;
-  background: #083f5b;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
-  opacity: 0.95;
-}
-
-.reset-btn:hover {
-  background: #062f44;
+  background: url("./resources/background.png") center / 100% 100% no-repeat;
 }
 
 .placed-layer {
@@ -64,12 +43,31 @@ body {
   pointer-events: none;
 }
 
+.pizza-access-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  --pizza-slot-ring: rgba(190, 160, 240, 0.55);
+  --pizza-slot-fill: rgba(143, 83, 201, 0.1);
+  --pizza-slot-ring-width: 2px;
+}
+
+.pizza-access-layer--ready {
+  --pizza-slot-ring: rgba(255, 97, 166, 0.88);
+  --pizza-slot-fill: rgba(143, 83, 201, 0.22);
+  --pizza-slot-ring-width: 3px;
+}
+
 .placed-item {
   position: absolute;
-  transform: translate(-50%, -50%) scale(var(--item-scale, 1));
+  max-width: none;
+  transform: translate(-50%, -50%);
   transform-origin: center center;
   object-fit: contain;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+  filter:
+    drop-shadow(0 1px 2px rgba(143, 83, 201, 0.18))
+    drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18));
   z-index: 5;
 }
 
@@ -89,26 +87,104 @@ body {
   z-index: 20;
 }
 
-.hotspot {
-  position: absolute;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 12px;
+.access-wrap--ingredient {
+  border-radius: 14px;
 }
 
-.hotspot:focus-visible {
-  outline: 2px solid rgba(18, 113, 160, 0.8);
-  outline-offset: 1px;
+.palette-ingredient-visual {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: filter 0.15s ease-out;
+}
+
+.access-wrap--ingredient.ingredient-selected {
+  z-index: 21;
+}
+
+.access-wrap--ingredient.ingredient-selected .palette-ingredient-visual {
+  filter:
+    drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 0 4px rgba(143, 83, 201, 0.95))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.65))
+    drop-shadow(0 0 16px rgba(143, 83, 201, 0.4));
+}
+
+.access-wrap--ingredient:focus-visible:not(.ingredient-selected) .palette-ingredient-visual,
+.access-wrap--ingredient[hover]:not(.ingredient-selected) .palette-ingredient-visual {
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 5px rgba(143, 83, 201, 0.85))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.45));
+}
+
+.access-wrap--pizza-slot {
+  width: min(16.5%, 18vmin);
+  aspect-ratio: 1;
+  height: auto;
+  max-width: min(240px, 24vmin);
+  max-height: min(240px, 24vmin);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.pizza-slot {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: var(--pizza-slot-ring-width) dashed var(--pizza-slot-ring);
+  border-radius: 50%;
+  background: var(--pizza-slot-fill);
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 83, 201, 0.15),
+    0 1px 6px rgba(143, 83, 201, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+  transition:
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.pizza-slot:hover {
+  --pizza-slot-ring: rgba(255, 97, 166, 0.72);
+  --pizza-slot-fill: rgba(143, 83, 201, 0.16);
+}
+
+.access-wrap--pizza-slot:focus-visible {
+  outline: 2px solid rgba(255, 97, 166, 0.95);
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+.access-wrap--pizza-slot[hover] .pizza-slot {
+  --pizza-slot-ring: rgba(255, 97, 166, 0.98);
+  --pizza-slot-fill: rgba(143, 83, 201, 0.28);
+  box-shadow:
+    inset 0 0 0 2px rgba(143, 83, 201, 0.35),
+    0 0 0 2px rgba(255, 255, 255, 0.5),
+    0 0 0 5px rgba(143, 83, 201, 0.45),
+    0 0 20px rgba(255, 97, 166, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .drag-preview {
   position: fixed;
-  width: min(18vmin, 150px);
+  box-sizing: content-box;
+  width: auto;
   height: auto;
   pointer-events: none;
   z-index: 2000;
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
-  opacity: 0.94;
+  filter:
+    drop-shadow(0 0 4px rgba(143, 83, 201, 0.35))
+    drop-shadow(0 5px 14px rgba(0, 0, 0, 0.22));
+  opacity: 0.96;
 }

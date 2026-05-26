@@ -1,9 +1,9 @@
 {
   "name": "make-a-robot",
-  "title": "",
-  "subtitle": "",
-  "version": "1.0.0",
-  "description": "",
+  "title": "Make a Robot",
+  "subtitle": "Build your robot in the workshop",
+  "version": "2.0.0",
+  "description": "Single-scene robot builder: open a part category (head, body, arms, legs, or wheels), pick from the panel, and see your robot update live. Squidly access-button supports eye-gaze, switch, and mouse. Shared robot parts sync via SquidlyAPI Firebase when a session is active.",
   "author": "",
   "icon": ""
 }

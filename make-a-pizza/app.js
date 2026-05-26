@@ -1,3 +1,6 @@
+import { initBackToHub } from "../shared/back-nav.js";
+import { createSessionSync } from "../shared/session-sync.js";
+
 const TOPPINGS = [
   { id: "pepper", src: "./resources/pepper.svg", label: "Green pepper" },
   { id: "pepperoni", src: "./resources/pepperoni.svg", label: "Pepperoni" },
@@ -6,35 +9,38 @@ const TOPPINGS = [
 ];
 
 const DESIGN_WIDTH = 1920;
-const BASE_ITEM_SCALE = 0.60;
+const BASE_ITEM_SCALE = 1;
 const MAX_PER_ITEM = 8;
-const MASK_SRC = "./resources/mask.png";
-const MASK_BLOCK_RGB_MAX = 40;
+const PIZZA_CENTER = { xPct: 40, yPct: 50 };
+const PIZZA_RADIUS = { xPct: 25, yPct: 32 };
+const INGREDIENT_ACCESS_GROUP = "ingredient-palette";
 
-// Right-side ingredient icons on background.png
 const HOTSPOTS = [
-  { id: "pepper", x: 80.5, y: 22.5, w: 14, h: 12 },
-  { id: "pepperoni", x: 80.5, y: 37.5, w: 14, h: 12 },
-  { id: "tomato", x: 80.5, y: 52.5, w: 14, h: 12 },
-  { id: "mushroom", x: 80.5, y: 67.5, w: 14, h: 12 },
+  { id: "pepper", x: 85.6, y: 13.311, w: 11.667, h: 23.925 },
+  { id: "pepperoni", x: 85.666, y: 38.013, w: 11.302, h: 14.126 },
+  { id: "tomato", x: 83.332, y: 56.764, w: 13.775, h: 17.502 },
+  { id: "mushroom", x: 85.078, y: 74.802, w: 10.133, h: 13.161 },
 ];
 
 const sceneEl = document.getElementById("scene");
 const hotspotsEl = document.getElementById("hotspots");
 const placedLayerEl = document.getElementById("placed-layer");
+const pizzaAccessLayerEl = document.getElementById("pizza-access-layer");
 const resetBtn = document.getElementById("reset-btn");
+const resetAccessBtn = document.getElementById("reset-access-btn");
+const squidlyAPI = window.SquidlyAPI;
 
 let drag = null;
 let zStack = 1;
+let selectedItemId = null;
 
 const sourceImageCache = new Map();
-const maskImage = new Image();
-let maskReady = false;
-let maskPixels = null;
-let maskWidth = 0;
-let maskHeight = 0;
-const candidateCanvas = document.createElement("canvas");
-const candidateCtx = candidateCanvas.getContext("2d", { willReadFrequently: true });
+
+const sessionSync = createSessionSync({
+  gameSlug: "make-a-pizza",
+  serialize: serializePlacedState,
+  apply: applyPlacedState,
+});
 
 function getItemById(id) {
   return TOPPINGS.find((x) => x.id === id) || null;
@@ -50,18 +56,93 @@ function getSourceImage(item) {
   return img;
 }
 
-function getSceneScale() {
-  const sceneRect = sceneEl?.getBoundingClientRect();
-  const sceneWidth = sceneRect?.width || DESIGN_WIDTH;
-  return sceneWidth / DESIGN_WIDTH;
+function placedItemWidthPercentFromNatural(naturalWidth) {
+  if (!naturalWidth || !DESIGN_WIDTH) return 8;
+  return (naturalWidth / DESIGN_WIDTH) * 100 * BASE_ITEM_SCALE;
 }
 
-function getItemScale() {
-  return BASE_ITEM_SCALE * getSceneScale();
+function placedItemWidthPxFromNatural(naturalWidth) {
+  const sceneW = sceneEl?.getBoundingClientRect()?.width ?? 0;
+  if (!sceneW || !naturalWidth) return 100;
+  return (placedItemWidthPercentFromNatural(naturalWidth) / 100) * sceneW;
+}
+
+function bindPlacedItemLayout(img) {
+  const apply = () => {
+    const nw = img.naturalWidth;
+    if (!nw) return;
+    img.style.width = `${placedItemWidthPercentFromNatural(nw)}%`;
+    img.style.height = "auto";
+  };
+  if (img.complete) {
+    apply();
+  } else {
+    img.addEventListener("load", apply, { once: true });
+  }
+}
+
+function sizeDragPreviewToScene(preview) {
+  const apply = () => {
+    const nw = preview.naturalWidth;
+    if (!nw) return;
+    preview.style.width = `${placedItemWidthPxFromNatural(nw)}px`;
+    preview.style.height = "auto";
+  };
+  if (preview.complete) {
+    apply();
+  } else {
+    preview.addEventListener("load", apply, { once: true });
+  }
 }
 
 function getPlacedCount(itemId) {
   return placedLayerEl.querySelectorAll(`[data-item-id="${itemId}"]`).length;
+}
+
+function serializePlacedState() {
+  const items = Array.from(placedLayerEl.querySelectorAll(".placed-item"))
+    .map((node) => {
+      const itemId = node.dataset.itemId;
+      const left = Number.parseFloat(node.style.left);
+      const top = Number.parseFloat(node.style.top);
+      const z = Number.parseInt(node.style.zIndex || "1", 10);
+      if (!itemId || !Number.isFinite(left) || !Number.isFinite(top)) return null;
+      return {
+        itemId,
+        xPct: Number(left.toFixed(3)),
+        yPct: Number(top.toFixed(3)),
+        z: Number.isFinite(z) ? z : 1,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.z - b.z);
+  return JSON.stringify({ v: 1, items });
+}
+
+function applyPlacedState(statePayload) {
+  if (typeof statePayload !== "string" || !statePayload.trim()) return;
+  let parsed;
+  try {
+    parsed = JSON.parse(statePayload);
+  } catch {
+    return;
+  }
+  if (!parsed || !Array.isArray(parsed.items)) return;
+
+  cleanupDragPreview();
+  placedLayerEl.innerHTML = "";
+  zStack = 1;
+
+  parsed.items
+    .filter((item) => item && getItemById(item.itemId))
+    .sort((a, b) => (a.z || 1) - (b.z || 1))
+    .forEach((item) => {
+      const node = createPlacedItem(getItemById(item.itemId), item.xPct, item.yPct);
+      const itemZ = Number.isFinite(item.z) ? item.z : zStack + 1;
+      node.style.zIndex = String(itemZ);
+      zStack = Math.max(zStack, itemZ);
+      placedLayerEl.appendChild(node);
+    });
 }
 
 function createPlacedItem(item, xPct, yPct) {
@@ -72,19 +153,9 @@ function createPlacedItem(item, xPct, yPct) {
   img.dataset.itemId = item.id;
   img.style.left = `${xPct}%`;
   img.style.top = `${yPct}%`;
-  img.style.setProperty("--item-scale", String(getItemScale()));
   img.style.zIndex = String(++zStack);
 
-  const applyNaturalWidth = () => {
-    if (!img.naturalWidth) return;
-    img.style.width = `${img.naturalWidth}px`;
-    img.style.height = "auto";
-  };
-  if (img.complete) {
-    applyNaturalWidth();
-  } else {
-    img.addEventListener("load", applyNaturalWidth, { once: true });
-  }
+  bindPlacedItemLayout(img);
 
   img.addEventListener("pointerdown", onPlacedPointerDown);
   return img;
@@ -95,6 +166,14 @@ function clientToScenePercent(clientX, clientY) {
   return {
     xPct: ((clientX - r.left) / r.width) * 100,
     yPct: ((clientY - r.top) / r.height) * 100,
+  };
+}
+
+function scenePercentToClient(xPct, yPct) {
+  const r = sceneEl.getBoundingClientRect();
+  return {
+    x: r.left + (xPct / 100) * r.width,
+    y: r.top + (yPct / 100) * r.height,
   };
 }
 
@@ -118,66 +197,19 @@ function overlapsAnyPlaced(clientX, clientY, excludeElement) {
   return false;
 }
 
-function isMaskAllowedForItemAtClient(item, clientX, clientY) {
-  // Fail-closed: if mask is not ready, do not allow placement.
-  if (!maskReady || !maskPixels || !candidateCtx || !sceneEl) {
-    return false;
-  }
-
-  const source = getSourceImage(item);
-  if (!source || !source.naturalWidth || !source.naturalHeight) return false;
-
-  const itemScale = getItemScale();
-  const drawW = Math.max(1, Math.round(source.naturalWidth * itemScale));
-  const drawH = Math.max(1, Math.round(source.naturalHeight * itemScale));
-  candidateCanvas.width = drawW;
-  candidateCanvas.height = drawH;
-  candidateCtx.clearRect(0, 0, drawW, drawH);
-  candidateCtx.drawImage(source, 0, 0, drawW, drawH);
-
-  const px = candidateCtx.getImageData(0, 0, drawW, drawH).data;
-  const sceneRect = sceneEl.getBoundingClientRect();
-  const left = clientX - drawW / 2;
-  const top = clientY - drawH / 2;
-  // Higher sampling density near boundaries to prevent leaking outside mask.
-  const step = Math.max(1, Math.floor(Math.min(drawW, drawH) / 220));
-
-  for (let y = 0; y < drawH; y += step) {
-    for (let x = 0; x < drawW; x += step) {
-      const idx = (y * drawW + x) * 4;
-      const alpha = px[idx + 3];
-      if (alpha < 24) continue;
-
-      const sceneX = left + x;
-      const sceneY = top + y;
-      const nx = (sceneX - sceneRect.left) / sceneRect.width;
-      const ny = (sceneY - sceneRect.top) / sceneRect.height;
-      if (nx < 0 || nx > 1 || ny < 0 || ny > 1) {
-        return false;
-      }
-
-      const mx = Math.max(0, Math.min(maskWidth - 1, Math.round(nx * (maskWidth - 1))));
-      const my = Math.max(0, Math.min(maskHeight - 1, Math.round(ny * (maskHeight - 1))));
-      const maskIndex = (my * maskWidth + mx) * 4;
-      const isBlack =
-        maskPixels[maskIndex] <= MASK_BLOCK_RGB_MAX &&
-        maskPixels[maskIndex + 1] <= MASK_BLOCK_RGB_MAX &&
-        maskPixels[maskIndex + 2] <= MASK_BLOCK_RGB_MAX;
-      if (isBlack) {
-        return false;
-      }
-    }
-  }
-  return true;
+function isPizzaAreaAllowedAtClient(clientX, clientY) {
+  const sceneRect = sceneEl?.getBoundingClientRect();
+  if (!sceneRect) return false;
+  const xPct = ((clientX - sceneRect.left) / sceneRect.width) * 100;
+  const yPct = ((clientY - sceneRect.top) / sceneRect.height) * 100;
+  const dx = (xPct - PIZZA_CENTER.xPct) / PIZZA_RADIUS.xPct;
+  const dy = (yPct - PIZZA_CENTER.yPct) / PIZZA_RADIUS.yPct;
+  return Number.isFinite(dx) && Number.isFinite(dy) && (dx * dx + dy * dy <= 1);
 }
 
-function tryPlacementClientPosition(item, clientX, clientY, excludeElement) {
-  if (overlapsAnyPlaced(clientX, clientY, excludeElement)) {
-    return null;
-  }
-  if (!isMaskAllowedForItemAtClient(item, clientX, clientY)) {
-    return null;
-  }
+function tryPlacementClientPosition(clientX, clientY, excludeElement) {
+  if (overlapsAnyPlaced(clientX, clientY, excludeElement)) return null;
+  if (!isPizzaAreaAllowedAtClient(clientX, clientY)) return null;
   return { x: clientX, y: clientY };
 }
 
@@ -207,6 +239,9 @@ function resetPizza() {
   cleanupDragPreview();
   placedLayerEl.innerHTML = "";
   zStack = 1;
+  selectedItemId = null;
+  syncSelectionStyles();
+  sessionSync.publish(squidlyAPI);
 }
 
 function beginPaletteDrag(e, item) {
@@ -229,11 +264,25 @@ function beginPaletteDrag(e, item) {
   preview.style.left = `${e.clientX}px`;
   preview.style.top = `${e.clientY}px`;
 
+  sizeDragPreviewToScene(preview);
+
   if (e.currentTarget && typeof e.currentTarget.setPointerCapture === "function") {
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
   attachGlobalPointerListeners();
+}
+
+function syncSelectionStyles() {
+  hotspotsEl.querySelectorAll(".access-wrap--ingredient").forEach((wrap) => {
+    wrap.classList.toggle("ingredient-selected", wrap.dataset.itemId === selectedItemId);
+  });
+  pizzaAccessLayerEl?.classList.toggle("pizza-access-layer--ready", Boolean(selectedItemId));
+}
+
+function selectItem(itemId) {
+  selectedItemId = itemId;
+  syncSelectionStyles();
 }
 
 function onHotspotPointerDown(e) {
@@ -246,7 +295,16 @@ function onHotspotPointerDown(e) {
     return;
   }
 
+  selectItem(item.id);
   beginPaletteDrag(e, item);
+}
+
+function onIngredientAccessClick(e) {
+  const ingredientAccessButton = e.currentTarget;
+  const item = getItemById(ingredientAccessButton.dataset.itemId);
+  if (!item) return;
+  if (getPlacedCount(item.id) >= MAX_PER_ITEM) return;
+  selectItem(item.id);
 }
 
 function onPlacedPointerDown(e) {
@@ -285,6 +343,8 @@ function onPlacedPointerDown(e) {
   preview.style.left = `${e.clientX}px`;
   preview.style.top = `${e.clientY}px`;
 
+  sizeDragPreviewToScene(preview);
+
   if (typeof element.setPointerCapture === "function") {
     element.setPointerCapture(e.pointerId);
   }
@@ -307,15 +367,17 @@ function onPointerUp(e) {
   }
 
   if (drag.mode === "palette") {
-    const placement = tryPlacementClientPosition(drag.item, e.clientX, e.clientY, null);
+    const placement = tryPlacementClientPosition(e.clientX, e.clientY, null);
     if (placement) {
       const { xPct, yPct } = clientToScenePercent(placement.x, placement.y);
       const node = createPlacedItem(drag.item, xPct, yPct);
       placedLayerEl.appendChild(node);
+      selectItem(drag.item.id);
+      sessionSync.publish(squidlyAPI);
     }
   } else if (drag.mode === "placed") {
     const { element, prevLeft, prevTop, prevVisibility } = drag;
-    const placement = tryPlacementClientPosition(drag.item, e.clientX, e.clientY, element);
+    const placement = tryPlacementClientPosition(e.clientX, e.clientY, element);
     if (placement) {
       const { xPct, yPct } = clientToScenePercent(placement.x, placement.y);
       element.style.left = `${xPct}%`;
@@ -328,56 +390,76 @@ function onPointerUp(e) {
     if (element.isConnected) {
       element.style.visibility = prevVisibility || "visible";
     }
+    sessionSync.publish(squidlyAPI);
   }
 
   drag.preview.remove();
   drag = null;
 }
 
-function renderHotspots() {
+function renderIngredientAccessButtons() {
   hotspotsEl.innerHTML = "";
-  HOTSPOTS.forEach((hs) => {
-    const item = getItemById(hs.id);
+  HOTSPOTS.forEach((hotspot, hotspotIndex) => {
+    const item = getItemById(hotspot.id);
     if (!item) return;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "hotspot";
-    button.dataset.itemId = item.id;
-    button.setAttribute("aria-label", `place ${item.label}`);
-    button.style.left = `${hs.x}%`;
-    button.style.top = `${hs.y}%`;
-    button.style.width = `${hs.w}%`;
-    button.style.height = `${hs.h}%`;
-    button.addEventListener("pointerdown", onHotspotPointerDown);
-    hotspotsEl.appendChild(button);
+    const paletteImg = document.createElement("img");
+    paletteImg.className = "palette-ingredient-visual";
+    paletteImg.src = item.src;
+    paletteImg.alt = "";
+    paletteImg.draggable = false;
+
+    const hotspotButton = document.createElement("button");
+    hotspotButton.type = "button";
+    hotspotButton.className = "hotspot";
+    hotspotButton.dataset.itemId = item.id;
+    hotspotButton.setAttribute("aria-label", `place ${item.label}`);
+    hotspotButton.addEventListener("pointerdown", onHotspotPointerDown);
+
+    const ingredientAccessButton = document.createElement("access-button");
+    ingredientAccessButton.className = "access-wrap access-wrap--ingredient";
+    ingredientAccessButton.dataset.itemId = item.id;
+    ingredientAccessButton.setAttribute("access-group", INGREDIENT_ACCESS_GROUP);
+    ingredientAccessButton.setAttribute("access-order", String(hotspotIndex + 1));
+    ingredientAccessButton.style.left = `${hotspot.x}%`;
+    ingredientAccessButton.style.top = `${hotspot.y}%`;
+    ingredientAccessButton.style.width = `${hotspot.w}%`;
+    ingredientAccessButton.style.height = `${hotspot.h}%`;
+    ingredientAccessButton.addEventListener("access-click", onIngredientAccessClick);
+    ingredientAccessButton.appendChild(paletteImg);
+    ingredientAccessButton.appendChild(hotspotButton);
+    hotspotsEl.appendChild(ingredientAccessButton);
   });
+  syncSelectionStyles();
 }
 
-function initMask() {
-  maskImage.addEventListener("load", () => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx || !maskImage.naturalWidth || !maskImage.naturalHeight) {
-      maskReady = false;
-      maskPixels = null;
-      return;
-    }
+function placeSelectedItemAtScenePercent(xPct, yPct) {
+  const item = getItemById(selectedItemId);
+  if (!item) return false;
+  if (getPlacedCount(item.id) >= MAX_PER_ITEM) return false;
 
-    maskWidth = maskImage.naturalWidth;
-    maskHeight = maskImage.naturalHeight;
-    canvas.width = maskWidth;
-    canvas.height = maskHeight;
-    ctx.drawImage(maskImage, 0, 0);
-    maskPixels = ctx.getImageData(0, 0, maskWidth, maskHeight).data;
-    maskReady = true;
+  const { x, y } = scenePercentToClient(xPct, yPct);
+  const placement = tryPlacementClientPosition(x, y, null);
+  if (!placement) return false;
+
+  const scenePct = clientToScenePercent(placement.x, placement.y);
+  const node = createPlacedItem(item, scenePct.xPct, scenePct.yPct);
+  placedLayerEl.appendChild(node);
+  sessionSync.publish(squidlyAPI);
+  return true;
+}
+
+function onPizzaDropSlotAccessClick(e) {
+  const wrap = e.currentTarget;
+  const xPct = Number(wrap.dataset.slotXPct);
+  const yPct = Number(wrap.dataset.slotYPct);
+  if (!Number.isFinite(xPct) || !Number.isFinite(yPct)) return;
+  placeSelectedItemAtScenePercent(xPct, yPct);
+}
+
+function initPizzaDropSlots() {
+  pizzaAccessLayerEl?.querySelectorAll(".pizza-drop-slot").forEach((el) => {
+    el.addEventListener("access-click", onPizzaDropSlotAccessClick);
   });
-  maskImage.addEventListener("error", () => {
-    maskReady = false;
-    maskPixels = null;
-    maskWidth = 0;
-    maskHeight = 0;
-  });
-  maskImage.src = MASK_SRC;
 }
 
 function preloadSourceImages() {
@@ -386,7 +468,15 @@ function preloadSourceImages() {
   });
 }
 
-initMask();
 preloadSourceImages();
-renderHotspots();
+renderIngredientAccessButtons();
+initPizzaDropSlots();
 resetBtn?.addEventListener("click", resetPizza);
+resetAccessBtn?.addEventListener("access-click", resetPizza);
+
+initBackToHub();
+if (squidlyAPI?.addSessionInfoListener) {
+  squidlyAPI.addSessionInfoListener((info) => sessionSync.init(info, squidlyAPI));
+} else {
+  sessionSync.init(null, squidlyAPI);
+}

@@ -7,86 +7,50 @@
 html,
 body {
   margin: 0;
+  width: 100%;
   height: 100%;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
 }
 
 body {
-  background: #ececec;
-  overflow: hidden;
-}
-
-.game {
-  width: 100%;
-  height: 100%;
   display: grid;
   place-items: center;
-  padding: 8px;
+  background: #0d4267;
 }
 
+/* Unknown elements default to inline; without block layout % sizing collapses. */
+motion,
+access-button {
+  display: block;
+}
+
+/*
+ * 16:9 letterboxed stage (1920×1080 baseline). UI % and background are relative
+ * to this box so resize keeps proportions; viewport letterboxes with body bg.
+ */
 .scene {
-  width: min(100vw - 16px, calc((100vh - 16px) * 4 / 3));
-  aspect-ratio: 4 / 3;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  aspect-ratio: 16 / 9;
   position: relative;
   overflow: hidden;
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
+  container-type: size;
+  container-name: scene;
+  background-color: #0d4267;
 }
 
-.reset-btn {
-  position: absolute;
-  top: 1.6%;
-  left: 1.6%;
-  z-index: 40;
-  border: 0;
-  border-radius: 999px;
-  padding: 8px 14px;
-  background: #0d4267;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
-  opacity: 0.95;
-}
-
-.reset-btn:hover {
-  background: #0a334f;
-}
-
-.status {
-  position: absolute;
-  top: 1.6%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 35;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.62);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.hotspots {
+/* fill = stretch to scene width & height (object-fit, not background-size). */
+.scene-bg {
   position: absolute;
   inset: 0;
-  z-index: 30;
-}
-
-.hotspot {
-  position: absolute;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 10px;
-}
-
-.hotspot:focus-visible {
-  outline: 2px solid rgba(13, 66, 103, 0.8);
-  outline-offset: 1px;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
 }
 
 .robot-layer {
@@ -101,4 +65,191 @@ body {
   transform: translate(-50%, -50%);
   transform-origin: center center;
   object-fit: contain;
+}
+
+/* head-7+: anchor to bottom of calibrated head slot (not vertical center). */
+.robot-part.part-head.robot-part--align-bottom {
+  object-position: bottom center;
+}
+
+.robot-part.part-arm1,
+.robot-part.part-arm2,
+.robot-part.part-leg1,
+.robot-part.part-leg2 {
+  object-fit: cover;
+}
+
+.robot-part.part-arm1,
+.robot-part.part-leg1 {
+  object-position: left center;
+}
+
+.robot-part.part-arm2,
+.robot-part.part-leg2 {
+  object-position: right center;
+}
+
+.category-access {
+  position: absolute;
+  inset: 0;
+  z-index: 11000;
+  pointer-events: none;
+}
+
+.picker-layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 34%;
+  z-index: 11500;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(13, 66, 103, 0) 0%,
+    rgba(13, 66, 103, 0.72) 18%,
+    rgba(13, 66, 103, 0.88) 100%
+  );
+  backdrop-filter: blur(4px);
+  padding: 14px 14px 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.picker-layer[hidden] {
+  display: none !important;
+}
+
+.picker-header {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  pointer-events: none;
+}
+
+.picker-layer__title {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: #fff;
+  font-size: clamp(17px, 2.2cqh, 22px);
+  line-height: 1.3;
+  font-weight: 700;
+  pointer-events: none;
+  text-align: left;
+}
+
+.picker-back-wrap {
+  flex: 0 0 auto;
+  position: relative;
+  width: 42%;
+  min-width: 112px;
+  max-width: 160px;
+  height: 40px;
+  pointer-events: auto;
+}
+
+.picker-back-wrap[hidden] {
+  display: none !important;
+}
+
+.picker-back {
+  font-size: 16px;
+}
+
+.picker-grid {
+  --picker-gap: 10px;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--picker-gap);
+  pointer-events: auto;
+  padding: 0 4px 4px;
+  box-sizing: border-box;
+}
+
+.access-wrap--category {
+  pointer-events: auto;
+}
+
+.category-btn {
+  z-index: 1;
+  font-size: clamp(16px, 2.1cqh, 22px);
+}
+
+.access-wrap--category.category-open .category-btn {
+  --squidly-btn-main: hsl(18, 77%, 50%);
+  --squidly-btn-tab: hsl(18, 86%, 41%);
+  --squidly-btn-main-hover: hsl(18, 73%, 40%);
+  --squidly-btn-tab-hover: hsl(18, 82%, 33%);
+  --squidly-btn-main-active: hsl(18, 80%, 32%);
+  --squidly-btn-tab-active: hsl(18, 88%, 26%);
+  --squidly-btn-text: white;
+  --squidly-btn-outline: hsl(18, 86%, 28%);
+  color: white;
+  background-color: var(--squidly-btn-main);
+  box-shadow:
+    inset 0 -0.35em 0 var(--squidly-btn-tab),
+    0 2px 4px rgba(0, 0, 0, 0.22),
+    0 0 0 2px var(--squidly-btn-outline);
+}
+
+.access-wrap--picker {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 10px;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.picker-item-visual {
+  position: absolute;
+  inset: 6%;
+  width: 88%;
+  height: 88%;
+  margin: auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: filter 0.15s ease-out;
+}
+
+.access-wrap--picker.picker-item-selected {
+  z-index: 2;
+}
+
+.access-wrap--picker.picker-item-selected .picker-item-visual {
+  filter:
+    drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
+    drop-shadow(0 0 4px rgba(143, 83, 201, 0.95))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.65));
+}
+
+.access-wrap--picker:focus-visible:not(.picker-item-selected) .picker-item-visual,
+.access-wrap--picker[hover]:not(.picker-item-selected) .picker-item-visual {
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 5px rgba(143, 83, 201, 0.85))
+    drop-shadow(0 0 10px rgba(255, 97, 166, 0.45));
+}
+
+.access-wrap--picker.access-wrap--hidden {
+  display: none;
 }
